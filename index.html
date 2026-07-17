@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fourth Thing</title>
+<meta name="description" content="Spin to pick this week's fourth standup topic—the fun one after did, doing, and blocked.">
+<meta name="theme-color" content="#0b0f0c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f7f5ee" media="(prefers-color-scheme: light)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%230b0f0c'/><text x='8.5' y='12.5' font-family='monospace' font-size='11' font-weight='bold' text-anchor='middle' fill='%234ade80'>4</text></svg>">
+<style>
+  :root {
+    color-scheme: dark light;
+    --bg: #0b0f0c;
+    --ink: #d7e0d9;
+    --dim: #8a988e;
+    --accent: #4ade80;
+    --glow: 0 0 28px rgba(74, 222, 128, 0.28);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f7f5ee;
+      --ink: #1f2421;
+      --dim: #5a635c;
+      --accent: #0b6b3a;
+      --glow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    line-height: 1.5;
+  }
+  main {
+    min-height: 100svh;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: clamp(1rem, 4vw, 3rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.25rem;
+  }
+  h1 {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+  .tagline { margin: 0; color: var(--dim); font-size: 0.9rem; }
+  .tagline em { font-style: normal; color: var(--ink); }
+  .prompt { margin: 1rem 0 0; color: var(--dim); }
+  .prompt .dollar { color: var(--accent); }
+  .log {
+    height: 4.5rem;
+    overflow: hidden;
+    font-size: 0.9rem;
+    color: var(--dim);
+  }
+  .log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .log div:nth-child(1) { opacity: 0.25; }
+  .log div:nth-child(2) { opacity: 0.45; }
+  .log div:nth-child(3) { opacity: 0.7; }
+  .result {
+    margin: 0;
+    min-height: 2.4em;
+    font-size: clamp(1.75rem, 5.5vw, 5rem);
+    font-weight: 700;
+    line-height: 1.15;
+    text-wrap: balance;
+    overflow-wrap: break-word;
+    text-shadow: var(--glow);
+  }
+  .result.idle { color: var(--dim); font-weight: 400; text-shadow: none; }
+  .cursor {
+    display: inline-block;
+    width: 0.55em;
+    height: 1em;
+    margin-left: 0.12em;
+    vertical-align: text-bottom;
+    background: var(--accent);
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  button {
+    align-self: flex-start;
+    font: inherit;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: transparent;
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    padding: 0.6em 1.4em;
+    cursor: pointer;
+  }
+  button:hover { background: var(--accent); color: var(--bg); }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  footer { color: var(--dim); font-size: 0.85rem; }
+  kbd {
+    font: inherit;
+    border: 1px solid var(--dim);
+    border-radius: 3px;
+    padding: 0 0.35em;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cursor { animation: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Fourth Thing</h1>
+    <p class="tagline">did &middot; doing &middot; blocked &middot; <em>the fourth thing</em></p>
+  </header>
+  <div class="log" aria-hidden="true">
+    <div></div><div></div><div></div>
+  </div>
+  <p class="result idle" id="result" aria-hidden="true"><span id="resultText"></span></p>
+  <p class="sr-only" role="status" id="live"></p>
+  <p class="prompt" aria-hidden="true"><span class="dollar">$</span> topics -4 --rand | head -n1<span class="cursor"></span></p>
+  <button id="spinBtn" type="button">[ execute ]</button>
+  <footer>press <kbd>enter</kbd> or <kbd>space</kbd> to run</footer>
+  <noscript><p>JavaScript is required. Sorry—the randomness lives there.</p></noscript>
+</main>
+<script>
+  // submit topics here: https://github.com/mharen/fourth-thing
+  const TOPICS = [
+    "What new music are you into?",
+    "What new movie or TV show are you watching?",
+    "When did you last leave the state?",
+    "What's a recent fun vacation?",
+    "What sports team are you rooting for?",
+    "What video game are you playing these days?",
+    "What's your current coffee/tea/drink order?",
+    "What's something you're looking forward to?",
+    "Tabs or spaces?",
+    "Coke or Pepsi?",
+    "McDonald's or Wendy's?",
+    "Star Wars or Star Trek?",
+    "Vim or Emacs?",
+    "Light mode or dark mode?",
+    "What's a keyboard shortcut you actually use?",
+    "What was the first computer you ever used?",
+    "What's your uptime? (how long since your last reboot)",
+    "How many browser tabs do you have open right now?",
+    "How many monitors is too many monitors?",
+    "GIF: hard G or soft G?",
+    "iOS or Android?",
+    "Cats or dogs?",
+    "Early bird or night owl?",
+    "Pineapple on pizza: yes or no?",
+    "Cereal: milk first or cereal first?",
+    "What's a low-stakes hill you'll die on?",
+    "What's a concert you still think about?",
+    "What's your go-to karaoke song?",
+    "What snack takes you back to childhood?",
+    "What's the weirdest food combo you genuinely enjoy?",
+    "Breakfast for dinner: yes or no?",
+    "What podcast are you listening to lately?",
+    "What's your dream side project?",
+    "What's the most useless skill you have?",
+    "What's your most-used emoji?",
+    "What's a purchase under $50 you've been enjoying?",
+    "What's your desert island album?",
+    "How have you been wasting time lately?",
+    "If you could have one superpower, what would it be?",
+    "What's a piece of advice that stuck with you?",
+    "What's your favorite season?",
+    "What dev tool have you tried recently?",
+    "Roller coasters: yes or no?",
+    "What fictional world would you live in?",
+    "What's a holiday tradition you look forward to?",
+    "If you weren't in tech, what job would you have?",
+    "What video game did you play way too much of as a kid?",
+    "Mario or Sonic?",
+    "Which game show could you actually win?",
+    "Wordle, crossword, or sudoku?",
+    "Uno, Monopoly, or Scrabble?",
+    "Retro games or new releases?",
+    "What movie can you quote way too much of?",
+    "What show have you rewatched the most?",
+    "What cartoon did you watch growing up?",
+    "What theme song do you still know by heart?",
+    "Marvel or DC?",
+    "What's a one-hit wonder you'll defend?",
+    "What song is stuck in your head lately?",
+    "What was the first concert you ever went to?",
+    "Vinyl, CDs, or streaming?",
+    "Movie theater or couch?",
+    "What's a tradition in your family?",
+    "What meal instantly reminds you of home?",
+    "Who's the cook in your household?",
+    "What's your go-to family movie night pick?",
+    "What was your first car?",
+    "What chore do you secretly enjoy?",
+    "What's hanging on your fridge right now?",
+    "Window seat or aisle seat?",
+    "What's a city you'd visit again in a heartbeat?",
+    "Beach or mountains?",
+    "What's the longest drive you've ever done?",
+    "What's a soda flavor that deserves more respect?",
+    "Waffles or pancakes?",
+    "Thin crust or deep dish?",
+    "What's your go-to pizza order?",
+    "What's your ice cream order?",
+    "Chocolate or fruity candy?",
+    "What's your Halloween candy of choice?",
+    "Hot dog: ketchup, mustard, or something else?",
+    "How do you take your eggs?",
+    "Soup or salad?",
+    "What's the oldest piece of tech you still use?",
+    "Do you own a printer, and does it work?",
+    "What was your first screen name?",
+    "Smart home: cool or creepy?",
+    "Digital books or paper books?",
+    "What's your phone wallpaper right now?",
+    "Time travel: past or future?",
+    "Space or the ocean?",
+    "What animal would you be?",
+    "Snooze button: yes or no?",
+    "Olympics: summer or winter?",
+    "Cilantro: delicious or soap?",
+    "Sweet or savory breakfast?",
+    "What's your comfort food these days?",
+    "Crunchy or smooth peanut butter?",
+    "PC or console?",
+    "Chess or checkers?",
+    "What mobile game is on your phone right now?",
+    "Subtitles: on or off?",
+    "Comedy or horror?",
+    "What's the last movie you saw in theaters?",
+    "Camping or hotels?",
+    "Pack light or overpack?",
+    "What's the next trip on your calendar?",
+    "Houseplants: thriving or struggling?",
+    "Do you make your bed every day?",
+    "What's your ideal weekend look like?",
+    "Mac, Windows, or Linux?",
+    "Inbox zero or inbox infinity?",
+    "What's your phone battery at right now?",
+    "Watching sports or playing them?",
+    "What sport would you try if you could?",
+    "What's your go-to way to stay active?",
+    "Teleportation or invisibility?",
+    "Coffee or tea?",
+    "Cake or pie?",
+    "Burgers or tacos?",
+    "Sparkling or still water?",
+    "What's for lunch today?",
+    "What's your go-to takeout order?",
+    "Spicy food: love it or leave it?",
+    "Fries, mashed, or baked?",
+    "What hot sauce is in your fridge?",
+    "Sushi: yes or no?",
+    "Nintendo, PlayStation, or Xbox?",
+    "Single-player or multiplayer?",
+    "What's your go-to party game?",
+    "Do you finish games or drop them?",
+    "What game are you bad at but love anyway?",
+    "Cards or dominoes?",
+    "Jigsaw puzzles: relaxing or maddening?",
+    "What arcade game did you sink quarters into?",
+    "Trivia night: are you any good?",
+    "Movies or TV shows?",
+    "What's your hype-up song?",
+    "Rom-com or action movie?",
+    "One episode at a time or binge the whole season?",
+    "What's the last song you added to a playlist?",
+    "What's a movie you'll always stop and watch?",
+    "What genre of music is your default?",
+    "Sequel, prequel, or reboot?",
+    "Do you sing in the car?",
+    "What's a country you'd love to visit?",
+    "City break or nature escape?",
+    "Do you plan trips or wing it?",
+    "Train, plane, or automobile?",
+    "What's a local spot you'd take a visitor?",
+    "All-inclusive resort or backpacking?",
+    "What's the farthest you've been from home?",
+    "Do you collect anything from your travels?",
+    "Do you have any pets?",
+    "What's the view from your window right now?",
+    "Do you meal prep for the week?",
+    "Do you have a junk drawer?",
+    "Tidy desk or organized chaos?",
+    "What's your Sunday routine?",
+    "What's a chore you've been putting off?",
+    "Any home projects going on lately?",
+    "What's the last thing you cooked?",
+    "What web browser do you use?",
+    "Wired or wireless?",
+    "How many apps are on your phone's home screen?",
+    "Notifications on or off?",
+    "What's your Wi-Fi network named?",
+    "What AI tools are you using lately?",
+    "Do you use a password manager?",
+    "What's your go-to font?",
+    "Mechanical keyboard or laptop keys?",
+    "Football, basketball, or baseball?",
+    "Team sports or solo sports?",
+    "What sport do you love to watch?",
+    "Skiing or snowboarding?",
+    "Have you been to a live game recently?",
+    "Golf: fun or a good walk spoiled?",
+    "Bowling: are you any good?",
+    "What sport do you play just for fun?",
+    "Fly or breathe underwater?",
+    "Talk to animals or speak every language?",
+    "What's something on your bucket list?",
+    "If you won the lottery, would you keep working?",
+    "What decade would you time travel to?",
+    "If you could live anywhere, where would it be?",
+    "What's your zombie apocalypse skill?",
+    "What would you do with a surprise day off tomorrow?",
+    "If you could instantly master one instrument, which?",
+    "What's your go-to donut?",
+    "What's your go-to bagel order?",
+    "What's your go-to pen or pencil?",
+    "What's your thermostat set to?",
+    "Car windows: up or down?",
+    "Which social media app are you most active on lately?",
+    "If you wrote a book, what would it be about?",
+    "What's your favorite summer activity?",
+    "Who's the most famous person you've spotted in the wild?",
+    "If you went back to school, money no object, what would you study?",
+    "Which movie villain kind of had a point?",
+    "What beloved show could you never get into?",
+    "Which fictional character would make a great coworker?",
+    "What's a movie you think is overrated?",
+    "What movie always makes you tear up?",
+    "What band defined your high school years?",
+    "What lyric have you been singing wrong for years?",
+    "What's a condiment you put on things you shouldn't?",
+    "What's the strangest thing in your fridge right now?",
+    "What's your most controversial pizza take?",
+    "What dish have you slowly perfected over the years?",
+    "What's a meal you cooked that flopped?",
+    "What Halloween candy did you always trade away?",
+    "What's a regional food you miss or want to try?",
+    "What mythical creature would you keep as a pet?",
+    "What's the title of your autobiography?",
+    "If you could have dinner with anyone, living or dead, who?",
+    "As a pro wrestler, what's your entrance music and finisher?",
+    "One consequence-free life do-over—what do you redo?",
+    "What's a sound you find weirdly satisfying?",
+    "What was your favorite Saturday-morning ritual as a kid?",
+    "What toy did you beg your parents for?",
+    "What was your childhood nickname?",
+    "What show were you not allowed to watch (but did)?",
+    "What was the coolest thing in your childhood bedroom?",
+    "What's your pettiest pet peeve?",
+    "What trend are you glad is finally over?",
+    "What app does everyone love but you?",
+    "What's a useless thing you've bought?",
+    "What's a food trend you refuse to try?",
+    "What's on your desk that has no business being there?",
+    "What's your end-of-workday shutdown ritual?",
+    "What do you listen to while you work?",
+    "If your job had a mascot, what would it be?",
+    "What party trick can you actually pull off?",
+    "What life skill are you weirdly proud of?",
+    "What's something you think everyone should know how to do?",
+    "What's a time you got way too hot?",
+    "What's a beautiful place you've been?",
+    "What wrong turn became a good story?",
+    "What's a sketchy place you've spent the night?",
+    "What's your unglamorous secret to a good day?",
+    "What habit are you trying to build or break?",
+    "Which obscure Olympic sport could you get weirdly into?",
+    "One Olympic event tomorrow—which gives you the best odds?",
+    "What book did you start but never finish?",
+    "What's an impulse buy you're glad you made?",
+    "What's your go-to excuse for leaving a party early?",
+    "What compliment have you never forgotten?",
+    "Which of your possessions would baffle a future archaeologist?",
+    "What word or phrase do you overuse?",
+    "What's a gift so bad it was kind of great?",
+    "What's a widely loved thing you secretly find boring?",
+    "What's a skill you faked until you made it?",
+    "What's the longest you've held onto a piece of clothing?",
+    "What's your most-repeated family saying?",
+    "What fictional food have you always wanted to try?",
+    "What weirdly specific thing makes you irrationally happy?",
+    "What's a piece of trivia rattling around your head?",
+    "If you could bring back one discontinued food, what would it be?",
+  ];
+
+  const KEY = "fourth-thing:recent";
+  const HISTORY_MAX = 50;
+
+  const result = document.getElementById("result");
+  const resultText = document.getElementById("resultText");
+  const live = document.getElementById("live");
+  const btn = document.getElementById("spinBtn");
+  const logLines = document.querySelectorAll(".log div");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+  let spinning = false;
+  let spunThisSession = false;
+
+  const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  function loadHistory() {
+    try {
+      const v = JSON.parse(localStorage.getItem(KEY));
+      return Array.isArray(v)
+        ? v.filter((t) => typeof t === "string").slice(-HISTORY_MAX)
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveHistory(h) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(h.slice(-HISTORY_MAX)));
+    } catch {}
+  }
+
+  function eligiblePool() {
+    const recent = new Set(loadHistory());
+    const pool = TOPICS.filter((t) => !recent.has(t));
+    return pool.length ? pool : TOPICS;
+  }
+
+  function recordPick(topic) {
+    const history = loadHistory();
+    if (spunThisSession) history.pop();
+    history.push(topic);
+    saveHistory(history);
+    spunThisSession = true;
+  }
+
+  function pushLog(text) {
+    for (let i = 0; i < logLines.length - 1; i++) {
+      logLines[i].textContent = logLines[i + 1].textContent;
+    }
+    logLines[logLines.length - 1].textContent = "> " + text;
+  }
+
+  function reveal(winner) {
+    result.classList.remove("idle");
+    recordPick(winner);
+    const done = () => {
+      live.textContent = winner;
+      spinning = false;
+    };
+    if (reduceMotion.matches) {
+      resultText.textContent = winner;
+      done();
+      return;
+    }
+    resultText.textContent = "";
+    let i = 0;
+    (function type() {
+      resultText.textContent = winner.slice(0, ++i);
+      if (i < winner.length) setTimeout(type, 16);
+      else done();
+    })();
+  }
+
+  function spin() {
+    if (spinning) return;
+    spinning = true;
+    const winner = randomFrom(eligiblePool());
+    if (reduceMotion.matches) {
+      reveal(winner);
+      return;
+    }
+    resultText.textContent = "";
+    live.textContent = "";
+    result.classList.remove("idle");
+    let delay = 45;
+    let last = "";
+    (function frame() {
+      let t;
+      do t = randomFrom(TOPICS);
+      while (t === last);
+      last = t;
+      pushLog(t);
+      if (delay >= 260) {
+        pushLog("✓ " + winner);
+        reveal(winner);
+        return;
+      }
+      delay *= 1.14;
+      setTimeout(frame, delay);
+    })();
+  }
+
+  btn.addEventListener("click", spin);
+  addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target === document.body) {
+      e.preventDefault();
+      spin();
+    }
+  });
+
+</script>
+</body>
+</html>
