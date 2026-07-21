@@ -61,6 +61,11 @@
       &::before {
         content: '# ';
       }
+
+      span {
+        margin: 0 .25rem;
+        color: var(--dim);
+      }
     }
 
     .prompt {
@@ -133,31 +138,6 @@
       }
     }
 
-    #spinBtn {
-      display: none;
-      /* touch-only; shown via media query below */
-      align-self: flex-start;
-      font: inherit;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--accent);
-      background: transparent;
-      border: 2px solid var(--accent);
-      border-radius: 4px;
-      padding: 0.6em 1.4em;
-      cursor: pointer;
-    }
-
-    #spinBtn:hover {
-      background: var(--accent);
-      color: var(--bg);
-    }
-
-    #spinBtn:focus-visible {
-      outline: 3px solid var(--accent);
-      outline-offset: 3px;
-    }
-
     footer {
       color: var(--dim);
       font-size: 0.85rem;
@@ -188,18 +168,6 @@
       outline-offset: 2px;
     }
 
-    /* Touch-primary devices unlikely to have a keyboard: show the button,
-     hide the (unusable) keyboard hint. */
-    @media (hover: none) and (pointer: coarse) {
-      #spinBtn {
-        display: inline-block;
-      }
-
-      footer {
-        display: none;
-      }
-    }
-
     .sr-only {
       position: absolute;
       width: 1px;
@@ -222,7 +190,7 @@
 <body>
   <main>
     <header>
-      <h1>did &middot; doing &middot; blocked &middot; fourth thing</h1>
+      <h1>did<span>/</span>doing<span>/</span>blocked<span>/</span>fourth thing</h1>
     </header>
     <div class="log" aria-hidden="true">
       <div></div>
@@ -232,14 +200,20 @@
     <p class="result idle" id="result" aria-hidden="true"><span id="resultText"></span></p>
     <p class="sr-only" role="status" id="live"></p>
     <p class="prompt" aria-hidden="true">topics -4 --rand | head -n1<span class="cursor"></span></p>
-    <button id="spinBtn" type="button">[ execute ]</button>
-    <footer>press <button class="key" type="button" id="enterKey">enter</button> or <button class="key" type="button" id="spaceKey">space</button> to run</footer>
+    <footer>
+      press <button class="key" type="button">enter ⏎</button>
+      or <button class="key" type="button">space</button> to run
+    </footer>
     <noscript>
       <p>JavaScript is required. Sorry—the randomness lives there.</p>
     </noscript>
   </main>
   <script>
     // submit topics here: https://github.com/mharen/fourth-thing
+
+    // note to self: encoding this as a trie is fun, but an experiment showed the encoded version
+    // was actually larger when factoring in http compression. And it was a lot more complicated.
+    // It's tough to beat simple text compression.
     const TOPICS = [
       "What new music are you into?",
       "What new movie or TV show are you watching?",
@@ -507,7 +481,6 @@
     const result = document.getElementById("result");
     const resultText = document.getElementById("resultText");
     const live = document.getElementById("live");
-    const btn = document.getElementById("spinBtn");
     const logLines = document.querySelectorAll(".log div");
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -590,23 +563,27 @@
       let last = "";
       (function frame() {
         let t;
-        do t = randomFrom(TOPICS);
+        do
+          t = randomFrom(TOPICS);
         while (t === last);
+
         last = t;
         pushLog(t);
+
         if (delay >= 260) {
           pushLog("✓ " + winner);
           reveal(winner);
           return;
         }
+
         delay *= 1.14;
         setTimeout(frame, delay);
       })();
     }
 
-    btn.addEventListener("click", spin);
-    document.getElementById("enterKey").addEventListener("click", spin);
-    document.getElementById("spaceKey").addEventListener("click", spin);
+    for (const button of document.getElementsByTagName('button'))
+      button.addEventListener("click", spin);
+
     addEventListener("keydown", (e) => {
       if ((e.key === "Enter" || e.key === " ") && e.target === document.body) {
         e.preventDefault();
