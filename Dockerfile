@@ -1,11 +1,13 @@
+# syntax=docker/dockerfile:1.4
 FROM joseluisq/static-web-server:2
 COPY index.html /public/
 
 # Persuade Cloudflare to cache the page hard at the edge (1 year) while keeping
 # browsers on a short leash (1 day) so a redeploy shows up quickly. Custom
 # headers are the one SWS setting env vars can't express, so they need a config
-# file — written inline here to keep the repo down to one file.
-RUN cat <<'EOF' > /sws.toml
+# file — written inline here (COPY heredoc, no shell needed) to keep the repo
+# down to one file.
+COPY <<'EOF' /sws.toml
 [general]
 root = "/public"
 
