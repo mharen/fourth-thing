@@ -497,6 +497,10 @@
     const KEY = "fourth-thing:recent";
     const HISTORY_MAX = 50;
 
+    // ~one character per 60Hz frame. The floor is below 16ms so every 60Hz frame
+    // clears it, but above 8ms so 120Hz displays don't type twice as fast.
+    const TYPE_MS = 12;
+
     const result = document.getElementById("result");
     const resultText = document.getElementById("resultText");
     const live = document.getElementById("live");
@@ -546,6 +550,17 @@
       logLines[logLines.length - 1].textContent = text;
     }
 
+    // Reserve the winner's final height up front so the $ prompt and footer below
+    // don't get shoved down as the text types past a line break. Stored in em, not
+    // px, so it still tracks the clamp()'d font size if the window is resized.
+    function reserveHeight(winner) {
+      resultText.textContent = winner;
+      result.style.minHeight = "";
+      const em = parseFloat(getComputedStyle(result).fontSize);
+      result.style.minHeight = result.offsetHeight / em + "em";
+      resultText.textContent = "";
+    }
+
     function reveal(winner) {
       result.classList.remove("idle");
       recordPick(winner);
@@ -560,11 +575,15 @@
       }
       resultText.textContent = "";
       let i = 0;
-      (function type() {
-        resultText.textContent = winner.slice(0, ++i);
-        if (i < winner.length) setTimeout(type, 16);
+      let last = 0;
+      requestAnimationFrame(function type(now) {
+        if (now - last >= TYPE_MS) {
+          last = now;
+          resultText.textContent = winner.slice(0, ++i);
+        }
+        if (i < winner.length) requestAnimationFrame(type);
         else done();
-      })();
+      });
     }
 
     function spin() {
@@ -578,6 +597,7 @@
       resultText.textContent = "";
       live.textContent = "";
       result.classList.remove("idle");
+      reserveHeight(winner);
       let delay = 45;
       let last = "";
       (function frame() {
@@ -610,7 +630,11 @@
       }
     });
 
-    spin();
+    // Let the browser paint before spinning. This script is parser-blocking and the
+    // first thing spin() does is read localStorage — synchronous and disk-backed, so
+    // on a cold profile it can stall the main thread right before first paint. Two
+    // frames deep lands after that paint.
+    requestAnimationFrame(() => requestAnimationFrame(spin));
   </script>
 </body>
 
