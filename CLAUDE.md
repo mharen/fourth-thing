@@ -42,6 +42,17 @@ aesthetic. See `.claude/plans/00-init.md` for the full spec of what shipped.
 - The command (`$` prompt) line sits **below** the results, shell-style — output
   scrolls above the prompt. Don't "fix" this back to the top.
 
+## Shareable links (`#slug`)
+
+- Every pick puts a slug of the topic text in the hash, so the URL bar is always
+  a copyable link to what's on screen. Loading a `#slug` shows that topic and
+  skips the roulette; an unrecognized slug spins instead.
+- Slugs come from the topic **text**, not its index — links have to survive
+  topics being added, removed, or re-sorted. Don't switch to indices.
+- Use `history.replaceState`, never `location.hash =`, when the page sets the
+  hash itself. Assigning would stack a history entry per spin and turn the back
+  button into a re-spin button.
+
 ## Dev / preview / deploy
 
 - Preview via `.claude/launch.json` → "fourth-thing" (`npx http-server`,

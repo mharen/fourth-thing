@@ -458,6 +458,7 @@
       "What's the most useless skill you have?",
       "What's your dream side project?",
       "What's your favorite season?",
+      "What's your favorite shirt?",
       "What's your favorite summer activity?",
       "What's your go-to excuse for leaving a party early?",
       "What's your go-to pen or pencil?",
@@ -512,6 +513,31 @@
 
     const randomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+    // #shareable-slugs. Derived from the topic text rather than an index so the
+    // links survive topics being added, removed, or re-sorted.
+    const slugify = (topic) =>
+      topic.toLowerCase()
+        .replace(/['’]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
+    // decodeURIComponent throws on a mangled escape ("#%", or a link truncated
+    // mid-"%C3%A9" by a chat client). Our own slugs never need decoding, so a
+    // throw just means "not one of ours" — swallow it and spin.
+    const topicFromHash = () => {
+      let slug = "";
+      try {
+        slug = decodeURIComponent(location.hash.slice(1));
+      } catch { }
+      return slug ? TOPICS.find((t) => slugify(t) === slug) : undefined;
+    };
+
+    // replaceState, not location.hash — swapping the hash in place keeps the back
+    // button pointed wherever the visitor came from instead of stacking one entry
+    // per spin.
+    const setHash = (topic) =>
+      history.replaceState(null, "", "#" + slugify(topic));
+
     function loadHistory() {
       try {
         const v = JSON.parse(localStorage.getItem(KEY));
@@ -536,10 +562,10 @@
     }
 
     function recordPick(topic) {
-      const history = loadHistory();
-      if (spunThisSession) history.pop();
-      history.push(topic);
-      saveHistory(history);
+      const recent = loadHistory();
+      if (spunThisSession) recent.pop();
+      recent.push(topic);
+      saveHistory(recent);
       spunThisSession = true;
     }
 
@@ -564,6 +590,7 @@
     function reveal(winner) {
       result.classList.remove("idle");
       recordPick(winner);
+      setHash(winner);
       const done = () => {
         live.textContent = winner;
         spinning = false;
@@ -620,6 +647,24 @@
       })();
     }
 
+    // Skip the roulette when the URL already names a winner.
+    function show(topic) {
+      if (spinning) return;
+      spinning = true;
+      live.textContent = "";
+      result.classList.remove("idle");
+      reserveHeight(topic);
+      reveal(topic);
+    }
+
+    // Same-document navigation: a shared link pasted into an open tab, or the back
+    // button walking earlier links. An unrecognized hash spins instead, same as on
+    // load, so the URL bar never names one topic while the screen shows another.
+    addEventListener("hashchange", () => {
+      const topic = topicFromHash();
+      topic ? show(topic) : spin();
+    });
+
     for (const button of document.getElementsByTagName('button'))
       button.addEventListener("click", spin);
 
@@ -633,8 +678,11 @@
     // Let the browser paint before spinning. This script is parser-blocking and the
     // first thing spin() does is read localStorage — synchronous and disk-backed, so
     // on a cold profile it can stall the main thread right before first paint. Two
-    // frames deep lands after that paint.
-    requestAnimationFrame(() => requestAnimationFrame(spin));
+    // frames deep lands after that paint. An unrecognized hash (stale link, typo)
+    // falls through to a normal spin, which overwrites it.
+    const shared = topicFromHash();
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => (shared ? show(shared) : spin())));
   </script>
 </body>
 
